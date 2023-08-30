@@ -62,6 +62,7 @@ import ChatBox from '@app/components/ChatBox';
 import ChatBubble from '@app/components/ChatBubble';
 import ConversationList from '@app/components/ConversationList';
 import Layout from '@app/components/Layout';
+import RateLimitForm, { RateLimitFields } from '@app/components/RateLimitForm';
 import UsageLimitModal from '@app/components/UsageLimitModal';
 import useChat from '@app/hooks/useChat';
 import useStateReducer from '@app/hooks/useStateReducer';
@@ -161,6 +162,22 @@ export default function AgentPage() {
 
       router.push(RouteNames.AGENTS);
     }
+  };
+
+  const handleRateLimit = async (values: RateLimitFields) => {
+    await toast.promise(
+      axios.post('/api/agents', {
+        ...getAgentQuery?.data,
+        interfaceConfig: values,
+      }),
+      {
+        loading: 'Updating...',
+        success: 'Updated!',
+        error: 'Something went wrong',
+      }
+    );
+
+    getAgentQuery.mutate();
   };
 
   const handleChangeTab = (tab: string) => {
@@ -702,7 +719,9 @@ export default function AgentPage() {
                 </FormControl>
 
                 <Divider sx={{ my: 4 }} />
+                <RateLimitForm onSubmit={handleRateLimit} />
 
+                <Divider sx={{ my: 4 }} />
                 <FormControl sx={{ gap: 1 }}>
                   <FormLabel>Delete Agent</FormLabel>
                   <Typography level="body3">

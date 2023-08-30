@@ -19,12 +19,16 @@ import Typography from '@mui/joy/Typography';
 import type { Agent } from '@prisma/client';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Transition } from 'react-transition-group';
+import useSWR from 'swr';
 
 import ChatBox from '@app/components/ChatBox';
 import useChat from '@app/hooks/useChat';
+import useRateLimit from '@app/hooks/useRateLimit';
 import useStateReducer from '@app/hooks/useStateReducer';
 import { AgentInterfaceConfig } from '@app/types/models';
 import pickColorBasedOnBgColor from '@app/utils/pick-color-based-on-bgcolor';
+import { fetcher } from '@app/utils/swr-fetcher';
+
 
 export const theme = extendTheme({
   cssVarPrefix: 'databerry-chat-bubble',
@@ -70,6 +74,10 @@ function App(props: { agentId: string; initConfig?: AgentInterfaceConfig }) {
     visitorEmail: '',
   });
 
+  const { isRateExceeded, rateExceededMessage } = useRateLimit({
+    agentId: props.agentId,
+  });
+
   const {
     history,
     handleChatSubmit,
@@ -83,6 +91,8 @@ function App(props: { agentId: string; initConfig?: AgentInterfaceConfig }) {
   } = useChat({
     endpoint: `${API_URL}/api/agents/${props.agentId}/query`,
     channel: 'website',
+    isRateExceeded,
+    rateExceededMessage,
     // channel: ConversationChannel.website // not working with bundler parcel,
   });
 
@@ -94,11 +104,8 @@ function App(props: { agentId: string; initConfig?: AgentInterfaceConfig }) {
     );
   }, [state.config.primaryColor]);
 
-  const handleFetchAgent = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/agents/${props.agentId}`);
-      const data = (await res.json()) as Agent;
-
+   useSWR<Agent>(`${API_URL}/api/agents/${props.agentId}`, fetcher, {
+    onSuccess: (data) => {
       const agentConfig = data?.interfaceConfig as AgentInterfaceConfig;
 
       setState({
@@ -108,15 +115,11 @@ function App(props: { agentId: string; initConfig?: AgentInterfaceConfig }) {
           ...agentConfig,
         },
       });
-    } catch (err) {
+    },
+    onError: (err) => {
       console.error(err);
-    } finally {
-    }
-  };
-
-  useEffect(() => {
-    handleFetchAgent();
-  }, []);
+    },
+  });
 
   useEffect(() => {
     if (state.config?.initialMessage) {
