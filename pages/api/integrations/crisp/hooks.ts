@@ -14,7 +14,6 @@ import { createApiHandler } from '@app/utils/createa-api-handler';
 import formatSourcesRawText from '@app/utils/form-sources-raw-text';
 import getSubdomain from '@app/utils/get-subdomain';
 import guardAgentQueryUsage from '@app/utils/guard-agent-query-usage';
-import logger from '@app/utils/logger';
 import prisma from '@app/utils/prisma-client';
 import validate from '@app/utils/validate';
 
@@ -274,7 +273,8 @@ export const hook = async (req: AppNextApiRequest, res: NextApiResponse) => {
     const subdomain = getSubdomain(host!);
     body = req.body as HookBody;
 
-    logger.debug(body);
+    // logger.debug(body);
+    console.debug(body);
 
     const _timestamp = req.headers['x-crisp-request-timestamp'];
     const _signature = req.headers['x-crisp-signature'];
@@ -337,7 +337,7 @@ export const hook = async (req: AppNextApiRequest, res: NextApiResponse) => {
               body.data.content
             );
           } catch (err) {
-            logger.error(err);
+            // req.logger.error(err);
           }
         }
 
@@ -360,7 +360,7 @@ export const hook = async (req: AppNextApiRequest, res: NextApiResponse) => {
         }
         break;
       case 'message:updated':
-        logger.debug(body.data.content?.choices);
+        // req.logger.debug(body.data.content?.choices);
         const choices = body.data.content
           ?.choices as HookBodyMessageUpdated['data']['content']['choices'];
         const selected = choices?.find((one) => one.selected);
@@ -460,7 +460,7 @@ export const hook = async (req: AppNextApiRequest, res: NextApiResponse) => {
       }
     );
   } catch (err) {
-    logger.error(err);
+    // req.logger.error(err);
   } finally {
     return 'Success';
   }
